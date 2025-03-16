@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình Nghe Nhạc YouTube</title>
+    <script>
+        let queue = [];
+        let player;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '360',
+                width: '640',
+                videoId: '',
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED && queue.length > 0) {
+                playNext();
+            }
+        }
+
+        function searchYouTube() {
+            const query = document.getElementById('search').value;
+            const apiKey = 'YOUR_YOUTUBE_API_KEY'; // Thay bằng API key của bạn
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&key=${apiKey}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const results = document.getElementById('results');
+                    results.innerHTML = '';
+                    data.items.forEach(item => {
+                        const videoId = item.id.videoId;
+                        const title = item.snippet.title;
+                        const li = document.createElement('li');
+                        li.innerHTML = `<button onclick="addToQueue('${videoId}', '${title}')">Thêm</button> ${title}`;
+                        results.appendChild(li);
+                    });
+                });
+        }
+
+        function addToQueue(videoId, title) {
+            queue.push({ videoId, title });
+            updateQueueDisplay();
+            if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+                playNext();
+            }
+        }
+
+        function playNext() {
+            if (queue.length > 0) {
+                const nextVideo = queue.shift();
+                player.loadVideoById(nextVideo.videoId);
+                updateQueueDisplay();
+            }
+        }
+
+        function updateQueueDisplay() {
+            const queueList = document.getElementById('queue');
+            queueList.innerHTML = '';
+            queue.forEach(song => {
+                const li = document.createElement('li');
+                li.textContent = song.title;
+                queueList.appendChild(li);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Trình Nghe Nhạc YouTube</h1>
+    <p>Trang web này giúp bạn tìm kiếm và nghe nhạc từ YouTube dễ dàng. Bạn có thể tìm kiếm bài hát yêu thích, thêm vào danh sách chờ và phát nhạc một cách thuận tiện.</p>
+    <img src="music.jpg" alt="Hình ảnh âm nhạc" width="600">
+    <input type="text" id="search" placeholder="Tìm bài hát...">
+    <button onclick="searchYouTube()">Tìm kiếm</button>
+    <ul id="results"></ul>
+    <h2>Danh sách chờ</h2>
+    <ul id="queue"></ul>
+    <div id="player"></div>
+    <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
